@@ -1,5 +1,6 @@
 
 #include "../include/RedisServer.h"
+#include "../include/RedisDatabase.h"
 #include <iostream>
 #include <thread>
 #include  <chrono>
@@ -15,7 +16,12 @@ int main(int argc,char* argv[]){
     std::thread persistancethread([](){
         while(true){
             std::this_thread::sleep_for(std::chrono::seconds(300));
-            //dump the DB
+            
+            if(!RedisDatabase::getInstance().dump("dump.my_rdb")){
+                std::cerr <<"Error Dumping Database\n";
+            }else{
+                std::cout <<"Database Dumped to dump.my_rdb\n";
+            }
         }
     });
     persistancethread.detach();

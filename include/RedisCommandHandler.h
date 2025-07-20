@@ -10,6 +10,6 @@ public:
     std::string processCommand(const std::string& commandLine);
 
 private:
-}
+};
  
 #endif

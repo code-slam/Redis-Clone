@@ -1,0 +1,15 @@
+# Binaries
+my_redis_server
+
+# Build files
+/build/
+*.o
+*.d
+
+# OS-specific
+.DS_Store
+Thumbs.db
+
+# Backup / temp files
+*~
+*.swp

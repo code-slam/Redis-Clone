@@ -2,6 +2,7 @@
 #include <vector>
 #include <sstream>
 #include <algorithm>
+#include <iostream>
 //PARSE TO RESP
 /*
 simple strings :   +OK\r\n
@@ -71,7 +72,7 @@ std::vector<std::string> ParseRespCommand(const std::string &input){
         if(pos>=input.size() ||input[pos]!='$')break;
         pos++; //skip the $
         crlf=input.find("\r\n",pos);
-        if(crlf== std::string::npos)return break;
+        if(crlf== std::string::npos)break;
         int len= std::stoi(input.substr(pos,crlf-pos));
         pos=crlf+2;
         if(pos+len>=input.size())break;
@@ -84,19 +85,25 @@ std::vector<std::string> ParseRespCommand(const std::string &input){
 }
 
 RedisCommandHandler::RedisCommandHandler() {}
-
 std::string RedisCommandHandler::processCommand(const std::string& commandLine){
-    //use Resp parser
-    auto& tokens =ParseRespCommand(commandLine);
-    if(tokens.empty())return "-Error: Empty command\r\n";
-    std::string cmd=tokens[0];
-    std::transform(cmd.begin(),cmd.end(),cmd.begin(),::toupper);
+    auto tokens = ParseRespCommand(commandLine);
+    if(tokens.empty()) return "-ERR Empty command\r\n";
+    std::cout <<commandLine <<"\n";
+    for(auto& t:tokens){
+    	std::cout<<t<< "\n";
+    }
+    std::string cmd = tokens[0];
+    std::transform(cmd.begin(), cmd.end(), cmd.begin(), ::toupper);
     std::ostringstream response;
-
-    //connext to DB
-
-    //check commands
-
-
-    return response.str();
+    if(cmd == "PING") {
+        return "+PONG\r\n";
+    } else if(cmd == "SET" && tokens.size() >= 3) {
+        return "+OK\r\n";
+    } else if(cmd == "GET") {
+        return "$-1\r\n";  // null response
+    } else {
+        return "-ERR unknown command '" + cmd + "'\r\n";
+    }
+    return  response.str();
+   
 }

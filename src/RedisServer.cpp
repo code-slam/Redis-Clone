@@ -1,16 +1,31 @@
 #include "../include/RedisServer.h"
 #include "../include/RedisCommandHandler.h"
-
+#include "../include/RedisDatabase.h" 
 #include <iostream>
-#include <sys/socket.h>
-#include <unistd.h>
-#include<netinet/in.h>
-#include<vector>
-#include<thread>
-#include<string>
+#include <cstring>         // for memset
+#include <thread>          // for std::thread
+#include <vector>          // for std::vector
+#include <unistd.h>        // for close()
+#include <netinet/in.h>    // for sockaddr_in
+#include <sys/socket.h>    // for socket(), bind(), listen(), accept()
+#include <arpa/inet.h>     // for htons, htonl
+#include <csignal>
 
 static RedisServer* globalServer=nullptr;
 
+
+void signalHandler(int signum){
+    if(globalServer){
+        std::cout<<"Caught signal"<<signum<<",Shutting Down...\n";
+        globalServer->shutdown();
+
+    }
+    exit(signum);
+}
+
+void RedisServer::setupSignalHandler(){
+    signal(SIGINT,signalHandler);
+}
 RedisServer::RedisServer(int port) :port(port),server_socket(-1) ,running(true){
     globalServer=this; 
 }
@@ -42,7 +57,7 @@ void RedisServer::run(){
     serverAddr.sin_port=htons(port); //hosttonetwork byte order to the port
     serverAddr.sin_addr.s_addr= INADDR_ANY; //listen to all local inetrface
     //bind socket to that IP/port else thro error
-    if(bind(server_socket,(struct sockAddr*)&serverAddr,sizeof(serverAddr))<0){
+    if(bind(server_socket,(struct sockaddr*)&serverAddr,sizeof(serverAddr))<0){
         std::cerr<<"Error Binding Socket\n";
         return ;
     }   
@@ -78,8 +93,15 @@ void RedisServer::run(){
         });
         
     }
-    for(auto& t:thread){
+    for(auto& t:threads){
         if(t.joinable())t.join();
 
     }
+    //before shutting down.persist the db.
+    if(RedisDatabase::getInstance().dump("dump.my_rdb")){
+        std::cout <<"Database Dumped to dump.my_rdb\n";
+        }else{
+          std::cerr <<"Error Dumping Database\n";
+
+        }
 }
