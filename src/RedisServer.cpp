@@ -28,12 +28,18 @@ void RedisServer::setupSignalHandler(){
 }
 RedisServer::RedisServer(int port) :port(port),server_socket(-1) ,running(true){
     globalServer=this; 
+    setupSignalHandler();
 }
 
 void RedisServer::shutdown(){
     running=false;
 
     if(server_socket!=-1){
+         // Before shutdown, persist the database
+        if (RedisDatabase::getInstance().dump("dump.my_rdb"))
+            std::cout << "Database Dumped to dump.my_rdb\n";
+        else 
+            std::cerr << "Error dumping database\n";
         close(server_socket);
 
     }
@@ -97,11 +103,10 @@ void RedisServer::run(){
         if(t.joinable())t.join();
 
     }
-    //before shutting down.persist the db.
-    if(RedisDatabase::getInstance().dump("dump.my_rdb")){
-        std::cout <<"Database Dumped to dump.my_rdb\n";
-        }else{
-          std::cerr <<"Error Dumping Database\n";
-
-        }
+    // //before shutting down.persist the db.
+    // if(RedisDatabase::getInstance().dump("dump.my_rdb")){
+    //     std::cout <<"Database Dumped to dump.my_rdb\n";
+    // }else{
+    //   std::cerr <<"Error Dumping Database\n";
+    // }
 }
